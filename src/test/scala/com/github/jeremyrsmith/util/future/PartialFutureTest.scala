@@ -54,9 +54,11 @@ object PartialFutureTest extends App {
     p
   }
 
-  import PartialFuture._, Danger._
+  def sideEffect(arg:Option[String]) = println(arg)
 
-  val tester = futureMethod1("hi") orElse (futureMethod2("hello") andThen futureMethod3 orElse futureMethod3("bye")
+  import Danger._
+
+  val tester = futureMethod1("hi") orElse (futureMethod2("hello") andThen sideEffect) orElse futureMethod3("bye")
   println(Await.result(tester))
   System.exit(0)
 }
