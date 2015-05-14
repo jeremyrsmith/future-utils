@@ -4,28 +4,7 @@ import com.twitter.util.Awaitable.CanAwait
 import com.twitter.util._
 import scala.language.experimental.macros
 
-class FutureOption[+A](underlying:Future[Option[A]]) extends Future[Option[A]] {
 
-  def unLift = new PartialFuture(this)
-
-  override def respond(k: (Try[Option[A]]) => Unit) = underlying.respond(k)
-
-  override def transform[B](f: (Try[Option[A]]) => Future[B]) =
-    underlying.transform(f)
-
-  override def raise(interrupt: Throwable): Unit = underlying.raise(interrupt)
-
-  override def poll: Option[Try[Option[A]]] = underlying.poll
-
-  @throws[Exception](classOf[Exception])
-  override def result(timeout: Duration)(implicit permit: CanAwait) =
-    underlying.result(timeout)
-
-  override def isReady(implicit permit: CanAwait) = underlying.isReady
-
-  override def ready(timeout: Duration)(implicit permit: CanAwait) =
-    FutureOption.this
-}
 
 class FutureGen[+A](underlying: ()=>Future[Option[A]]) extends (() => Future[Option[A]]) {
   def apply() = underlying()
@@ -78,11 +57,4 @@ class PartialFuture[+A](underlying:Future[Option[A]]) extends Future[A] {
     underlying.isReady
 
   override def ready(timeout: Duration)(implicit permit: CanAwait): this.type = this
-}
-
-object PartialFuture {
-
-  implicit def futureOfOptionToFutureOption[A](fO: Future[Option[A]]):FutureOption[A] = new FutureOption(fO)
-  implicit def futureOptionToPartialFuture[A](fO: Future[Option[A]]):PartialFuture[A] = new PartialFuture(fO)
-  implicit def function0FutureToFutureGen[A](f: () => Future[Option[A]]):FutureGen[A] = new FutureGen[A](f)
 }
