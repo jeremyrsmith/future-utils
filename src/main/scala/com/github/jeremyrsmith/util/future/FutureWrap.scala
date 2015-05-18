@@ -8,7 +8,7 @@ class FutureWrap[+A](underlying:Future[A]) extends Future[A] {
   //attaches side effects to completion of future in predictable order
   def andThen[B >: A](f:B => Any):Future[A] = {
     val p = Promise[A]()
-    underlying.respond {
+    underlying.liftToTry map {
       case Return(v) =>
         f(v)
         p.setValue(v)
