@@ -4,30 +4,16 @@ import com.twitter.util.Awaitable.CanAwait
 import com.twitter.util._
 import scala.language.experimental.macros
 
-
-
-class FutureGen[+A](underlying: ()=>Future[Option[A]]) extends (() => Future[Option[A]]) {
-  def apply() = underlying()
-
-  def orElse[B >: A](next:()=>Future[Option[B]]):() => Future[Option[B]] = () => {
-    apply() flatMap {
-      case Some(v) => Future.value(Some(v))
-      case None => next()
-    }
-  }
-
-}
-
 class PartialFuture[+A](underlying:Future[Option[A]]) extends Future[A] {
 
-  def orElse[B >: A](next:()=>Future[Option[B]]):Future[Option[B]] = underlying flatMap {
+  def orElse[B >: A](next: => Future[Option[B]]):Future[Option[B]] = underlying flatMap {
     case Some(v) => Future.value(Some(v))
-    case None => next()
+    case None => next
   }
 
   def lift = underlying
 
-  override def respond(k: (Try[A]) => Unit): Future[A] = underlying.map {
+  override def respond(k: (Try[A]) => Unit): Future[A] = underlying map {
     case Some(v) => v
     case None => throw new MatchError("PartialFuture was not defined")
   } respond k
